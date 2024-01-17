@@ -1,44 +1,62 @@
-import logging
 from darts import TimeSeries
-
+import pandas as pd
+import logging
 
 class DataEnricher:
-    def __init__(self, power_load_df) -> None:
+    def __init__(self) -> None:
+        from data_controller import DataController
         from config.config import Configurations
 
         self.configs = Configurations()
         self.logger = logging.getLogger(self.configs.get_logger_name())
-        self._set_base_dataframe(power_load_df)
 
-    def enrich_dataset(self):
+        self.data_controller = DataController()
+
+    def enrich_dataset(self, target_year:int, extraction_date:str) -> None:
+
+        self.target_year = target_year
+        self.extraction_date = extraction_date
+
+        self._set_base_dataframe()
+
         covariates_scaled = self._get_covariates_ts()
 
-        y_scaler, y_train_scaled, y_val = self._get_y()
+        y_scaler, y_train_scaled, y_val = self._get_y(split=True)
 
-        return y_scaler, y_train_scaled, y_val, covariates_scaled
+        self._save_scaler(y_scaler, 'y_scaler')
+        self._save_timeseries(y_train_scaled, 'y_train_scaled')
+        self._save_timeseries(y_val, 'y_val')
+        self._save_timeseries(covariates_scaled, 'covariates_scaled')
 
-    def _get_y(self):
-        import pandas as pd
-
+    def _get_y(self, split:bool = False) -> None:
         y_ts = TimeSeries.from_dataframe(
             df=self.base_dataframe,
             time_col="Date",
             value_cols="Load",
             freq="D",
         )
-        split_dt = pd.Timestamp("20190101")
-        y_train, y_val = y_ts.split_before(split_dt)
 
-        y_scaler, y_train_scaled = self.scale_time_series(y_train)
+        if split:
+            max_year = self.base_dataframe.Date.dt.year.max()
+            split_dt = pd.Timestamp(str(max_year)+"0101")
+            y_train, y_val = y_ts.split_before(split_dt)
 
-        return y_scaler, y_train_scaled, y_val
+            y_scaler, y_train_scaled = self._scale_time_series(y_train)
 
-    def _decompose_base_dataframe(self):
+            return y_scaler, y_train_scaled, y_val
+
+    def _save_timeseries(self, timeseries, file_name):
+        self.data_controller.save_timeseries(timeseries,file_name,self.target_year,self.extraction_date)
+
+    def _save_scaler(self, scaler, file_name):
+        self.data_controller.save_scaler(scaler,file_name,self.target_year,self.extraction_date)
+
+    def _decompose_base_dataframe(self) -> None:
         from statsmodels.tsa.seasonal import MSTL
-        import pandas as pd
 
+        max_year_minus_one = self.base_dataframe.Date.dt.year.max() -1
         mstl_res = MSTL(
-            self.base_dataframe.set_index("Date")[:"2018-12-31"], periods=(7, 365)
+            self.base_dataframe.set_index("Date")[:str(max_year_minus_one)+"-12-31"], periods=(7, 365)
         ).fit()
 
         trend_df = mstl_res.trend.reset_index()
@@ -46,10 +64,10 @@ class DataEnricher:
             columns={"seasonal_7": "seasonal_week", "seasonal_365": "seasonal_year"}
         )
 
-        last_trend_year = trend_df.query("Date.dt.year==2018").reset_index(drop=True)
+        last_trend_year = trend_df.query("Date.dt.year==@max_year_minus_one").reset_index(drop=True)
         last_trend_year.Date = last_trend_year.Date + pd.offsets.DateOffset(years=1)
 
-        last_seasonal_year = seasonal_df.query("Date.dt.year==2018").reset_index(
+        last_seasonal_year = seasonal_df.query("Date.dt.year==@max_year_minus_one").reset_index(
             drop=True
         )
         last_seasonal_year.Date = last_seasonal_year.Date + pd.offsets.DateOffset(
@@ -63,12 +81,10 @@ class DataEnricher:
             [seasonal_df, last_seasonal_year], ignore_index=True
         )
 
-    def _set_base_dataframe(self, power_load_df):
-        self.base_dataframe = (
-            power_load_df.reset_index().query("Date<='2019-12-31'").copy()
-        )
+    def _set_base_dataframe(self) -> None:
+        self.base_dataframe = self.data_controller.get_raw_training_data(self.target_year,self.extraction_date)
 
-    def _get_weekend_ts(self):
+    def _get_weekend_ts(self) -> TimeSeries:
         base_copy = self.base_dataframe.copy()
         base_copy["is_weekend"] = base_copy.Date.apply(
             lambda x: 1 if x.isoweekday() > 5 else 0
@@ -84,7 +100,7 @@ class DataEnricher:
 
         return weekend_ts
 
-    def scale_time_series(self, ts, scaler=None):
+    def _scale_time_series(self, ts:TimeSeries, scaler=None) -> TimeSeries:
         from darts.dataprocessing.transformers import Scaler
 
         if scaler is None:
@@ -95,7 +111,7 @@ class DataEnricher:
             ts_scaled = scaler.transform(ts)
             return ts_scaled
 
-    def _get_covariates_ts(self):
+    def _get_covariates_ts(self) -> TimeSeries:
         from darts.utils.timeseries_generation import (
             datetime_attribute_timeseries as dt_attr,
         )
@@ -218,13 +234,13 @@ class DataEnricher:
             axis="component",
         )
 
-        covariates_scaler, covariates_scaled = self.scale_time_series(covariates_ts)
+        _, covariates_scaled = self._scale_time_series(covariates_ts)
         return covariates_scaled
 
-    def _get_holidays(self):
+    def _get_holidays(self) -> pd.DataFrame:
         import holidays
 
-        holiday_days = holidays.CountryHoliday("IT")
+        holiday_days = holidays.country_holidays("IT")
 
         base_df = self.base_dataframe[["Date"]].copy()
         # TODO: Refactor this code for optimization, readability and maintainability

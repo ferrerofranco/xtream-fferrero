@@ -39,14 +39,12 @@ class DatabaseDAO:
         self._execute_statement(query)
 
     def _insert_mock_data(self) -> None:
-        query = '''INSERT OR IGNORE INTO models(model_number, model_name, mape, r2, train_date, production) VALUES
-                        ('1', 'mock_bad_model','28.32','0.1','2022-01-01', TRUE)'''
+        query = '''INSERT OR IGNORE INTO models(model_number, model_name, mape, r2, train_date) VALUES
+                        ('1', 'mock_bad_model','28.32','0.1','2022-01-01')'''
         self._execute_statement(query)
 
-    def get_latest_model(self) -> list[tuple]:
-        query = '''SELECT model_number, model_name, mape, r2, train_date
-                    FROM models
-                    WHERE production'''
+    def get_latest_model_number(self) -> list[tuple]:
+        query = '''SELECT max(model_number) max_model_number FROM models'''
         return self._execute_statement(query)
     
     def save_dataset(self, dataset:pd.DataFrame, table_name:str) -> None:
@@ -64,15 +62,11 @@ class DatabaseDAO:
                 con=db_connection,
                 index=False,
             )
-            db_connection.invalidate()
-            self.engine.dispose()
         except:
             self.logger.error(
                 f"[{self.__class__.__name__}] failed to save dataset on {table_name}"
             )
             raise
-        finally:
-            db_connection.invalidate()
 
     def _execute_statement(self, statement:str) -> list:
         from contextlib import closing
@@ -91,3 +85,8 @@ class DatabaseDAO:
                 f"[{self.__class__.__name__}] {statement}"
             )
             raise
+
+    def save_metrics(self, mape:float, r2:float, model_name:str, extraction_date:str) -> None:
+        query = f'''INSERT INTO models(model_name, mape, r2, train_date) VALUES
+                        ('{model_name}','{mape}','{r2}','{extraction_date}')'''
+        self._execute_statement(query)
