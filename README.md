@@ -231,6 +231,6 @@ python ./main.py --prc 2 --target_year 2019 --model_name "test"
 ```  
 The tests can be run with `pytest` from within the tests folder. For example you could go to the tests folder and execute  
 ```bash
-pytest test_data_controller.py
+pytest -vv test_data_controller.py
 ```  
 Note: I intended to try and do more tests, but time was limited and had to prioritize.

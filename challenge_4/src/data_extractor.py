@@ -49,5 +49,4 @@ class DataExtractor:
                 "Load": pa.Column("Float64"),
             }
         )
-
         _ = schema.validate(dataframe)

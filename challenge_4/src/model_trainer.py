@@ -102,7 +102,7 @@ class ModelTrainer:
         high_values = forecast_df.query("Load > @high_value_limit").shape[0]
         if high_values>0:
             alarm_names.append('high_values')
-            alarm_contents.append(f'There are {high_values} values over {high_value_limit}')
+            alarm_contents.append(f'There are {high_values} values over {high_value_limit:,}')
 
         negatives = forecast_df.query("Load < 0").shape[0]
         if negatives>0:
@@ -113,7 +113,7 @@ class ModelTrainer:
         low_values = forecast_df.query("Load < 700_000").shape[0]
         if low_values >0 :
             alarm_names.append('low_values')
-            alarm_contents.append(f'There are {low_values} values under {low_value_limit}')
+            alarm_contents.append(f'There are {low_values} values under {low_value_limit:,}')
 
         alarms = pd.DataFrame(
             {

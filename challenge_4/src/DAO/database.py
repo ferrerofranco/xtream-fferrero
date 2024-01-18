@@ -52,7 +52,7 @@ class DatabaseDAO:
         db_connection = sqlite3.connect(self.db_path)
         try:
             self.logger.info(
-                f"[{self.__class__.__name__}] Saving dataset to {table_name}"
+                f"[{self.__class__.__name__}] Saving dataset with {dataset.shape[0]} rows to {table_name}"
             )
             dataset.to_sql(
                 if_exists="append",
