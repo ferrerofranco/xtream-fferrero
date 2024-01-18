@@ -203,4 +203,34 @@ Let's get cracking! 🍐💼🔍
 ---
 
 ## How to run
-Please fill this section as part of the assignment.
+
+First you'll need to set up an environment with python 3.9.16, I personally use anaconda but feel free to use what suits you best.  
+Then you'll be able activate your environment and  
+```bash 
+pip install -r requirements.txt
+```  
+using the requirements file should install everything that's needed.  
+Finally you should use  
+```bash
+python -m ipykernel install --name myenv --display-name "myenv"
+```  
+to have a visible kernel for the notebooks.  
+This will let you run everything but a few lines in challenge 2 where I test Facebook's Prophet model. If you need to run that specific part, you'll need to follow [Dart's install instructions](https://github.com/unit8co/darts/blob/master/INSTALL.md). I personally used  
+```bash
+conda install -c conda-forge -c pytorch u8darts-all
+```  
+and then installed the missing packages like `pytest` `pandera` and `ipykernel`.
+  
+On challenge 1 and 2, you'll find two notebooks on each. One with the suffix **_dev** and one with the suffix **_report**. The **_dev** one was mainly to give you a sense of my process and how I go about things, the **_report** one was created as a deliverable that can be showcased to stakeholders.  
+  
+On challenge 4 you can use the **main notebook** to execute the modules as if being called from main (and to play around and execute parts of the code if you wish).  
+You can also use the **access database notebook** to peruse the sqllite database and see the forecasts, alarms and such at leisure.  
+Alternatively you can invoke the **main.py** module with the necessary parameters. For example, after activating your environment, and standing in the **challenge_4** folder,  
+```bash
+python ./main.py --prc 2 --target_year 2019 --model_name "test"
+```  
+The tests can be run with `pytest` from within the tests folder. For example you could go to the tests folder and execute  
+```bash
+pytest -vv test_data_controller.py
+```  
+Note: I intended to try and do more tests, but time was limited and had to prioritize.
