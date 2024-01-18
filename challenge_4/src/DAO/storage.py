@@ -6,7 +6,7 @@ import logging
 
 class StorageDAO:
     def __init__(self) -> None:
-        from config.config import Configurations
+        from src.config.config import Configurations
         self.configs = Configurations()
 
         self.logger = logging.getLogger(self.configs.get_logger_name())
@@ -39,16 +39,31 @@ class StorageDAO:
 
     def save_parquet(self, dataframe:pd.DataFrame, sub_folder:str, file_name:str) -> None:
         from os.path import join
-        complete_filename = join(self.train_data_path, sub_folder, file_name + '.parquet.gzip')
-        dataframe.to_parquet(complete_filename,compression='gzip')
+
+        full_file_name = join(self.train_data_path, sub_folder, file_name + '.parquet.gzip')
+        self.logger.info(
+                f"[{self.__class__.__name__}] Saving dataframe as {full_file_name}"
+            )
+        dataframe.to_parquet(full_file_name,compression='gzip')
 
     def save_timeseries(self, timeseries: TimeSeries, full_file_name:str)->None:
+        self.logger.info(
+                f"[{self.__class__.__name__}] Pickling timeseries as {full_file_name}"
+            )
         timeseries.to_pickle(full_file_name + '.pkl')
 
     def pickle_file(self, file:Any, full_file_name:str) -> None:
         from pickle import dump
+        
+        self.logger.info(
+                f"[{self.__class__.__name__}] Pickling file as {full_file_name}"
+            )
         dump(file, open(full_file_name + '.pkl', 'wb'))
 
     def load_pickle(self, full_file_name:str) -> Any:
         from pickle import load
+
+        self.logger.info(
+                f"[{self.__class__.__name__}] Loading pickle {full_file_name}"
+            )
         return load(open(full_file_name,'rb'))

@@ -4,7 +4,7 @@ import logging
 
 class DatabaseDAO:
     def __init__(self) -> None:
-        from config.config import Configurations
+        from src.config.config import Configurations
         self.configs = Configurations()
 
         self.logger = logging.getLogger(self.configs.get_logger_name())
@@ -87,6 +87,9 @@ class DatabaseDAO:
             raise
 
     def save_metrics(self, mape:float, r2:float, model_name:str, extraction_date:str) -> None:
+        self.logger.info(
+                f"[{self.__class__.__name__}] Saving metrics to DB"
+            )
         query = f'''INSERT INTO models(model_name, mape, r2, train_date) VALUES
                         ('{model_name}','{mape}','{r2}','{extraction_date}')'''
         self._execute_statement(query)

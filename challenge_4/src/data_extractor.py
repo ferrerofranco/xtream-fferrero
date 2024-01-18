@@ -3,8 +3,8 @@ import logging
 
 class DataExtractor:
     def __init__(self) -> None:
-        from config.config import Configurations
-        from data_controller import DataController
+        from src.config.config import Configurations
+        from src.data_controller import DataController
 
         self.configs = Configurations()
         self.logger = logging.getLogger(self.configs.get_logger_name())
@@ -13,6 +13,10 @@ class DataExtractor:
 
     def extract_data(self, target_year:int, extraction_date:str) -> None:
         import pandas as pd
+
+        self.logger.info(
+            f"[{self.__class__.__name__}] Fetching and unifying data"
+        )
 
         file_list = self.data_controller.get_all_filenames(self.configs.get_storage_raw_data_path())
         filtered_file_list = [file_name for file_name in file_list if int(file_name[:4])<=target_year]

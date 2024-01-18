@@ -4,8 +4,8 @@ import logging
 
 class DataEnricher:
     def __init__(self) -> None:
-        from data_controller import DataController
-        from config.config import Configurations
+        from src.data_controller import DataController
+        from src.config.config import Configurations
 
         self.configs = Configurations()
         self.logger = logging.getLogger(self.configs.get_logger_name())
@@ -17,12 +17,19 @@ class DataEnricher:
         self.target_year = target_year
         self.extraction_date = extraction_date
 
+        self.logger.info(
+            f"[{self.__class__.__name__}] Enriching data"
+        )
+
         self._set_base_dataframe()
 
         covariates_scaled = self._get_covariates_ts()
 
         y_scaler, y_train_scaled, y_val = self._get_y(split=True)
 
+        self.logger.info(
+            f"[{self.__class__.__name__}] Saving enriched data"
+        )
         self._save_scaler(y_scaler, 'y_scaler')
         self._save_timeseries(y_train_scaled, 'y_train_scaled')
         self._save_timeseries(y_val, 'y_val')
@@ -117,6 +124,10 @@ class DataEnricher:
         )
         from darts import concatenate
         import numpy as np
+
+        self.logger.info(
+            f"[{self.__class__.__name__}] Calculating covariates"
+        )
 
         weekend_ts = self._get_weekend_ts()
 

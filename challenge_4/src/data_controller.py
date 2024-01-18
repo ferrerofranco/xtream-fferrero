@@ -5,9 +5,9 @@ import logging
 
 class DataController:
     def __init__(self) -> None:
-        from config.config import Configurations
-        from DAO.database import DatabaseDAO
-        from DAO.storage import StorageDAO
+        from src.config.config import Configurations
+        from src.DAO.database import DatabaseDAO
+        from src.DAO.storage import StorageDAO
 
         self.configs = Configurations()
 
@@ -16,6 +16,9 @@ class DataController:
         self.database_dao = DatabaseDAO()
 
     def get_all_filenames(self, folder_path:str) -> list[str]:
+        self.logger.info(
+                f"[{self.__class__.__name__}] Fetching all files in {folder_path}"
+            )
         return self.storage_dao.get_all_filenames(folder_path)
     
     def get_raw_file(self, file_name:str) -> pd.DataFrame:
@@ -30,6 +33,9 @@ class DataController:
         )
 
     def read_parquet(self, file_name:str, folder:str, sub_folder:str=None) -> pd.DataFrame:
+        self.logger.info(
+                f"[{self.__class__.__name__}] Reading parquet {file_name} in {folder}/{sub_folder}"
+            )
         return self.storage_dao.read_parquet(file_name,folder,sub_folder)
     
     def get_latest_model_number(self) -> int:
@@ -70,6 +76,10 @@ class DataController:
     def get_files_for_training(self, target_year:int, extraction_date:str) -> tuple:
         from os.path import join
 
+        self.logger.info(
+                f"[{self.__class__.__name__}] Fetching all files for training"
+            )
+
         file_objects = {}
         
         file_names = ['covariates_scaled', 'y_scaler','y_train_scaled','y_val']
@@ -90,6 +100,11 @@ class DataController:
             
             file_objects[file_name] = self.storage_dao.load_pickle(full_file_name)
 
+        for file_name in ['covariates_scaled', 'y_train_scaled', 'y_val']:
+            self.logger.info(
+                    f"[{self.__class__.__name__}] Fetched {file_name}. Min date: {file_objects[file_name].time_index.min()} Max date: {file_objects[file_name].time_index.max()}"
+                )
+        
         return (
             file_objects[file_names[0]],
             file_objects[file_names[1]],
@@ -109,7 +124,7 @@ class DataController:
             table_name=self.configs.get_database_forecast_table()
         )
 
-    def save_model(self, file, file_name:str, target_year:int, extraction_date:str)-> None:
+    def save_model(self, model, file_name:str, target_year:int, extraction_date:str)-> None:
         from os.path import join
 
         full_file_name = join(
@@ -119,18 +134,12 @@ class DataController:
                 extraction_date, 
                 str(target_year)    
             ])            
-        )
-        self.storage_dao.pickle_file(file, full_file_name)
+        ) + '.pt'
+        self.logger.info(
+                f"[{self.__class__.__name__}] Saving model to {full_file_name}"
+            )
+    
+        model.save(full_file_name)
         
-    # def load_model(self):
-    #     from os.path import join
-
-    #     model_number, model_name, mape, _, train_date = self.database_dao.get_latest_model()
-    #     self.logger.info(
-    #             f"""[{self.__class__.__name__}] Fetching model nbr: {model_number} "{model_name}" trained on {train_date}. MAPE:{mape}"""
-    #         )
-        
-    #     full_file_path = join(self.configs.get_storage_models_path()
-    #                           ,'_'.join([str(model_number,train_date,model_name)])) + '.pt'
-        
-    #     return self.storage_dao.load_model(full_file_path)
+    def save_alarms(self, alarms_df):
+        self.database_dao.save_dataset(dataset=alarms_df,table_name=self.configs.get_database_alarms_table())
