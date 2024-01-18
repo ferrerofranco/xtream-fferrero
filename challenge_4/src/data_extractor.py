@@ -24,6 +24,7 @@ class DataExtractor:
         full_df = None
         for file_name in filtered_file_list:
             temp_df = self.data_controller.get_raw_file(file_name)
+            self._validate_data(temp_df)
             if full_df is None:
                 full_df = temp_df.copy()
             else:
@@ -38,3 +39,15 @@ class DataExtractor:
             file_name=file_name,
             extraction_date=extraction_date
         )
+
+    def _validate_data(self, dataframe):
+        import pandera as pa
+
+        schema = pa.DataFrameSchema(
+            {
+                "Date": pa.Column("datetime64[ns]"),
+                "Load": pa.Column("Float64"),
+            }
+        )
+
+        _ = schema.validate(dataframe)

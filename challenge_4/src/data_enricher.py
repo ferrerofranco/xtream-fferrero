@@ -90,6 +90,19 @@ class DataEnricher:
 
     def _set_base_dataframe(self) -> None:
         self.base_dataframe = self.data_controller.get_raw_training_data(self.target_year,self.extraction_date)
+        self._validate_data(self.base_dataframe)
+
+    def _validate_data(self, dataframe):
+        import pandera as pa
+
+        schema = pa.DataFrameSchema(
+            {
+                "Date": pa.Column("datetime64[ns]"),
+                "Load": pa.Column("Float64"),
+            }
+        )
+
+        _ = schema.validate(dataframe)
 
     def _get_weekend_ts(self) -> TimeSeries:
         base_copy = self.base_dataframe.copy()
