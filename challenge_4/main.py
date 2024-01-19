@@ -3,6 +3,7 @@ import argparse
 import logging
 import sys
 
+
 def main(arguments):
     logging.info("[main] starting main process")
 
@@ -13,7 +14,7 @@ def main(arguments):
 
             current_date = date.today().strftime("%Y-%m-%d")
             data_extractor = DataExtractor()
-            data_extractor.extract_data(int(arguments.target_year),current_date)
+            data_extractor.extract_data(int(arguments.target_year), current_date)
 
             logging.info("[main] finished extracting")
 
@@ -23,10 +24,9 @@ def main(arguments):
 
             current_date = date.today().strftime("%Y-%m-%d")
             data_enricher = DataEnricher()
-            data_enricher.enrich_dataset(int(arguments.target_year),current_date)
+            data_enricher.enrich_dataset(int(arguments.target_year), current_date)
 
             logging.info("[main] finished enriching data")
-            
 
         elif arguments.prc == 2:
             from src.model_trainer import ModelTrainer
@@ -34,7 +34,9 @@ def main(arguments):
 
             current_date = date.today().strftime("%Y-%m-%d")
             model_trainer = ModelTrainer()
-            model_trainer.train(int(arguments.target_year),current_date,arguments.model_name)
+            model_trainer.train(
+                int(arguments.target_year), current_date, arguments.model_name
+            )
 
             logging.info("[main] finished training")
 
@@ -61,7 +63,7 @@ if __name__ == "__main__":
 
     configs = Configurations()
     logging_filename = configs.get_log_file_name()
-    logging_path = os.path.join('logs/',logging_filename)
+    logging_path = os.path.join("logs/", logging_filename)
 
     logging_format = "%(asctime)s-%(levelname)s: %(message)s"
     logging_formatter = logging.Formatter(logging_format)
@@ -69,9 +71,9 @@ if __name__ == "__main__":
     logger = logging.getLogger(configs.get_logger_name())
     logger.setLevel(logging_level)
 
-    logging_file_handler = RotatingFileHandler(logging_path,
-                                                maxBytes=1000000,
-                                                backupCount=5)
+    logging_file_handler = RotatingFileHandler(
+        logging_path, maxBytes=1000000, backupCount=5
+    )
     logging_file_handler.setLevel(logging_level)
     logging_file_handler.setFormatter(logging_formatter)
     logger.addHandler(logging_file_handler)
