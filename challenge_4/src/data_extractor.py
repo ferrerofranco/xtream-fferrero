@@ -11,15 +11,17 @@ class DataExtractor:
 
         self.data_controller = DataController()
 
-    def extract_data(self, target_year:int, extraction_date:str) -> None:
+    def extract_data(self, target_year: int, extraction_date: str) -> None:
         import pandas as pd
 
-        self.logger.info(
-            f"[{self.__class__.__name__}] Fetching and unifying data"
-        )
+        self.logger.info(f"[{self.__class__.__name__}] Fetching and unifying data")
 
-        file_list = self.data_controller.get_all_filenames(self.configs.get_storage_raw_data_path())
-        filtered_file_list = [file_name for file_name in file_list if int(file_name[:4])<=target_year]
+        file_list = self.data_controller.get_all_filenames(
+            self.configs.get_storage_raw_data_path()
+        )
+        filtered_file_list = [
+            file_name for file_name in file_list if int(file_name[:4]) <= target_year
+        ]
 
         full_df = None
         for file_name in filtered_file_list:
@@ -28,16 +30,16 @@ class DataExtractor:
             if full_df is None:
                 full_df = temp_df.copy()
             else:
-                full_df = pd.concat([full_df,temp_df],ignore_index=True)
+                full_df = pd.concat([full_df, temp_df], ignore_index=True)
 
-        full_df = full_df.sort_values(by='Date').reset_index(drop=True)
+        full_df = full_df.sort_values(by="Date").reset_index(drop=True)
 
-        file_name = 'all_up_to_'+str(target_year)
+        file_name = "all_up_to_" + str(target_year)
         self.data_controller.save_parquet(
             dataframe=full_df,
-            sub_folder='raw',
+            sub_folder="raw",
             file_name=file_name,
-            extraction_date=extraction_date
+            extraction_date=extraction_date,
         )
 
     def _validate_data(self, dataframe):
